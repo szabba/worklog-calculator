@@ -45,6 +45,7 @@ type Msg
     | TaskAdded
     | TaskRemoved { id : Int }
     | TaskRenamed { id : Int, newName : String }
+    | TaskMinutesSpentSet { id : Int, rawMinutes : String }
 
 
 view : Model -> Html Msg
@@ -98,7 +99,11 @@ viewTask ( id, task ) =
                 ]
                 []
             , H.text " took up "
-            , H.input [ HA.value task.minutesSpent.raw ] []
+            , H.input
+                [ HE.onInput <| \input -> TaskMinutesSpentSet { id = id, rawMinutes = input }
+                , HA.value task.minutesSpent.raw
+                ]
+                []
             , H.text " of my time."
             , H.button
                 [ HE.onClick <| TaskRemoved { id = id } ]
@@ -130,5 +135,12 @@ update msg model =
             let
                 newTasks =
                     model.tasks |> Task.update id (Task.rename newName)
+            in
+            { model | tasks = newTasks }
+
+        TaskMinutesSpentSet { id, rawMinutes } ->
+            let
+                newTasks =
+                    model.tasks |> Task.update id (Task.setMinutesSpent rawMinutes)
             in
             { model | tasks = newTasks }
