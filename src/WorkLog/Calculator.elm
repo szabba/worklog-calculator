@@ -52,6 +52,7 @@ loop diffLeft step assignment =
             |> loop (diffLeft - step) step
 
 
+timeThenID ( Int, Int ) -> (Int, Int )
 timeThenID ( id, time ) =
     ( time, id )
 

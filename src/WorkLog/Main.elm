@@ -23,7 +23,7 @@ main =
 
 type alias Model =
     { totalMinutes : NumberInput
-    , tasks : Dict Int Task
+    , tasks : Dict Int (Task NumberInput)
     }
 
 
@@ -66,14 +66,14 @@ viewMinutesToLog { raw } =
         ]
 
 
-viewTasks : Dict Int Task -> Html Msg
+viewTasks : Dict Int (Task NumberInput) -> Html Msg
 viewTasks tasks =
     H.table [] <|
         List.concatMap viewTask <|
             Dict.toList tasks
 
 
-viewTask : ( Int, Task ) -> List (Html Msg)
+viewTask : ( Int, Task NumberInput ) -> List (Html Msg)
 viewTask ( id, task ) =
     let
         wrapInRow attrs children =
@@ -87,7 +87,7 @@ viewTask ( id, task ) =
     ]
 
 
-viewTaskRow : Int -> Task -> Html Msg
+viewTaskRow : Int -> Task NumberInput -> Html Msg
 viewTaskRow id task =
     H.tr [] <|
         List.map (H.td [] << List.singleton)
@@ -110,7 +110,10 @@ viewTaskRow id task =
             ]
 
 
-viewIsNotAValidNumber : (List (H.Attribute msg) -> List (Html msg) -> Html msg) -> NumberInput -> Html msg
+viewIsNotAValidNumber :
+    (List (H.Attribute msg) -> List (Html msg) -> Html msg)
+    -> NumberInput
+    -> Html msg
 viewIsNotAValidNumber tag numberInput =
     case numberInput.parsed of
         Just _ ->

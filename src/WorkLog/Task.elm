@@ -8,36 +8,36 @@ import Dict exposing (Dict)
 import WorkLog.NumberInput as NumberInput exposing (NumberInput)
 
 
-type alias Task =
+type alias Task minutes =
     { name : String
-    , minutesSpent : NumberInput
+    , minutesSpent : minutes
     }
 
 
-empty : Task
+empty : Task NumberInput
 empty =
     { name = ""
     , minutesSpent = NumberInput.fromRawInput ""
     }
 
 
-rename : String -> Task -> Task
+rename : String -> Task minutes -> Task minutes
 rename newName task =
     { task | name = newName }
 
 
-setMinutesSpent : String -> Task -> Task
+setMinutesSpent : String -> Task NumberInput -> Task NumberInput
 setMinutesSpent rawMinutes task =
     { task | minutesSpent = NumberInput.fromRawInput rawMinutes }
 
 
-add : Dict Int Task -> Dict Int Task
+add : Dict Int (Task NumberInput) -> Dict Int (Task NumberInput)
 add tasks =
     tasks
         |> Dict.insert (nextID tasks) empty
 
 
-nextID : Dict Int Task -> Int
+nextID : Dict Int (Task minutes) -> Int
 nextID tasks =
     tasks
         |> Dict.keys
@@ -46,12 +46,12 @@ nextID tasks =
         |> Maybe.withDefault 0
 
 
-remove : Int -> Dict Int Task -> Dict Int Task
+remove : Int -> Dict Int (Task minutes) -> Dict Int (Task minutes)
 remove =
     Dict.remove
 
 
-update : Int -> (Task -> Task) -> Dict Int Task -> Dict Int Task
+update : Int -> (Task minutes -> Task minutes) -> Dict Int (Task minutes) -> Dict Int (Task minutes)
 update id updateFn tasks =
     tasks
         |> Dict.update id (Maybe.map updateFn)
