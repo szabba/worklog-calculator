@@ -42,8 +42,9 @@ init =
 
 type Msg
     = TotalEntered String
-    | TaskRemoved { id : Int }
     | TaskAdded
+    | TaskRemoved { id : Int }
+    | TaskRenamed { id : Int, newName : String }
 
 
 view : Model -> Html Msg
@@ -91,7 +92,11 @@ viewTask ( id, task ) =
     H.tr [] <|
         List.map (H.td [] << List.singleton)
             [ H.text "Task"
-            , H.input [ HA.value task.name ] []
+            , H.input
+                [ HE.onInput <| \input -> TaskRenamed { id = id, newName = input }
+                , HA.value task.name
+                ]
+                []
             , H.text " took up "
             , H.input [ HA.value task.minutesSpent.raw ] []
             , H.text " of my time."
@@ -118,5 +123,12 @@ update msg model =
             let
                 newTasks =
                     model.tasks |> Task.remove id
+            in
+            { model | tasks = newTasks }
+
+        TaskRenamed { id, newName } ->
+            let
+                newTasks =
+                    model.tasks |> Task.update id (Task.rename newName)
             in
             { model | tasks = newTasks }

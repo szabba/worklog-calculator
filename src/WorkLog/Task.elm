@@ -1,4 +1,4 @@
-module WorkLog.Task exposing (Task, add, empty, remove, rename, setMinutesSpent)
+module WorkLog.Task exposing (Task, add, empty, remove, rename, setMinutesSpent, update)
 
 --   This Source Code Form is subject to the terms of the Mozilla Public
 --   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -49,3 +49,9 @@ nextID tasks =
 remove : Int -> Dict Int Task -> Dict Int Task
 remove =
     Dict.remove
+
+
+update : Int -> (Task -> Task) -> Dict Int Task -> Dict Int Task
+update id updateFn tasks =
+    tasks
+        |> Dict.update id (Maybe.map updateFn)
