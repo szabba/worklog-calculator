@@ -82,7 +82,14 @@ viewTask ( id, task ) =
                     children
                 ]
     in
-    [ H.tr [] <|
+    [ viewTaskRow id task
+    , viewIsNotAValidNumber wrapInRow task.minutesSpent
+    ]
+
+
+viewTaskRow : Int -> Task -> Html Msg
+viewTaskRow id task =
+    H.tr [] <|
         List.map (H.td [] << List.singleton)
             [ H.text "Task"
             , H.input
@@ -101,8 +108,6 @@ viewTask ( id, task ) =
                 [ HE.onClick <| TaskRemoved { id = id } ]
                 [ H.text "Remove task" ]
             ]
-    , viewIsNotAValidNumber wrapInRow task.minutesSpent
-    ]
 
 
 viewIsNotAValidNumber : (List (H.Attribute msg) -> List (Html msg) -> Html msg) -> NumberInput -> Html msg
