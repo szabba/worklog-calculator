@@ -42,6 +42,7 @@ init =
 
 type Msg
     = TotalEntered String
+    | TaskRemoved { id : Int }
     | TaskAdded
 
 
@@ -78,15 +79,15 @@ viewIsNotAValidNumber numberInput =
                 [ H.text <| "\"" ++ numberInput.raw ++ "\" is not a valid number." ]
 
 
-viewTasks : Dict Int Task -> Html none
+viewTasks : Dict Int Task -> Html Msg
 viewTasks tasks =
     H.table [] <|
         List.map viewTask <|
             Dict.toList tasks
 
 
-viewTask : ( Int, Task ) -> Html none
-viewTask ( _, task ) =
+viewTask : ( Int, Task ) -> Html Msg
+viewTask ( id, task ) =
     H.tr [] <|
         List.map (H.td [] << List.singleton)
             [ H.text "Task"
@@ -94,6 +95,9 @@ viewTask ( _, task ) =
             , H.text " took up "
             , H.input [ HA.value task.minutesSpent.raw ] []
             , H.text " of my time."
+            , H.button
+                [ HE.onClick <| TaskRemoved { id = id } ]
+                [ H.text "Remove task" ]
             ]
 
 
@@ -107,5 +111,12 @@ update msg model =
             let
                 newTasks =
                     model.tasks |> Task.add
+            in
+            { model | tasks = newTasks }
+
+        TaskRemoved { id } ->
+            let
+                newTasks =
+                    model.tasks |> Task.remove id
             in
             { model | tasks = newTasks }
