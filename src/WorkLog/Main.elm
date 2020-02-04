@@ -5,10 +5,12 @@ module WorkLog.Main exposing (main)
 --   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import Browser
+import Dict exposing (Dict)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
 import WorkLog.NumberInput as NumberInput exposing (NumberInput)
+import WorkLog.Task as Task exposing (Task)
 
 
 main =
@@ -21,12 +23,20 @@ main =
 
 type alias Model =
     { totalMinutes : NumberInput
+    , tasks : Dict Int Task
     }
 
 
 init : Model
 init =
     { totalMinutes = NumberInput.fromValue <| 8 * 60
+    , tasks =
+        Dict.fromList
+            [ ( 0, Task.empty )
+            , ( 1, Task.empty |> Task.rename "#1" )
+            , ( 2, Task.empty |> Task.setMinutesSpent "20" )
+            , ( 3, Task.empty |> Task.rename "#3" |> Task.setMinutesSpent "45" )
+            ]
     }
 
 
@@ -39,6 +49,7 @@ view model =
     H.div []
         [ viewMinutesToLog model.totalMinutes
         , viewIsNotAValidNumber model.totalMinutes
+        , viewTasks model.tasks
         ]
 
 
@@ -61,6 +72,25 @@ viewIsNotAValidNumber numberInput =
             H.p
                 [ HA.style "color" "red" ]
                 [ H.text <| "\"" ++ numberInput.raw ++ "\" is not a valid number." ]
+
+
+viewTasks : Dict Int Task -> Html none
+viewTasks tasks =
+    H.table [] <|
+        List.map viewTask <|
+            Dict.toList tasks
+
+
+viewTask : ( Int, Task ) -> Html none
+viewTask ( _, task ) =
+    H.tr [] <|
+        List.map (H.td [] << List.singleton)
+            [ H.text "Task"
+            , H.input [ HA.value task.name ] []
+            , H.text " took up "
+            , H.input [ HA.value task.minutesSpent.raw ] []
+            , H.text " of my time."
+            ]
 
 
 update : Msg -> Model -> Model
