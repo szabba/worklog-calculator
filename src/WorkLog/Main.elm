@@ -37,7 +37,9 @@ type Msg
 view : Model -> Html Msg
 view model =
     H.div []
-        [ viewMinutesToLog model.totalMinutes ]
+        [ viewMinutesToLog model.totalMinutes
+        , viewIsNotAValidNumber model.totalMinutes
+        ]
 
 
 viewMinutesToLog : NumberInput -> Html Msg
@@ -47,6 +49,18 @@ viewMinutesToLog { raw } =
         , H.input [ HE.onInput TotalEntered, HA.value raw ] []
         , H.text " minutes."
         ]
+
+
+viewIsNotAValidNumber : NumberInput -> Html none
+viewIsNotAValidNumber numberInput =
+    case numberInput.parsed of
+        Just _ ->
+            H.text ""
+
+        Nothing ->
+            H.p
+                [ HA.style "color" "red" ]
+                [ H.text <| "\"" ++ numberInput.raw ++ "\" is not a valid number." ]
 
 
 update : Msg -> Model -> Model
