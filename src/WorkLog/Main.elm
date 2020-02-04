@@ -52,7 +52,7 @@ view : Model -> Html Msg
 view model =
     H.div []
         [ viewMinutesToLog model.totalMinutes
-        , viewIsNotAValidNumber model.totalMinutes
+        , viewIsNotAValidNumber H.p model.totalMinutes
         , viewTasks model.tasks
         , H.button
             [ HE.onClick TaskAdded ]
@@ -69,28 +69,23 @@ viewMinutesToLog { raw } =
         ]
 
 
-viewIsNotAValidNumber : NumberInput -> Html none
-viewIsNotAValidNumber numberInput =
-    case numberInput.parsed of
-        Just _ ->
-            H.text ""
-
-        Nothing ->
-            H.p
-                [ HA.style "color" "red" ]
-                [ H.text <| "\"" ++ numberInput.raw ++ "\" is not a valid number." ]
-
-
 viewTasks : Dict Int Task -> Html Msg
 viewTasks tasks =
     H.table [] <|
-        List.map viewTask <|
+        List.concatMap viewTask <|
             Dict.toList tasks
 
 
-viewTask : ( Int, Task ) -> Html Msg
+viewTask : ( Int, Task ) -> List (Html Msg)
 viewTask ( id, task ) =
-    H.tr [] <|
+    let
+        wrapInRow attrs children =
+            H.tr []
+                [ H.td ([ HA.colspan 6 ] ++ attrs)
+                    children
+                ]
+    in
+    [ H.tr [] <|
         List.map (H.td [] << List.singleton)
             [ H.text "Task"
             , H.input
@@ -109,6 +104,20 @@ viewTask ( id, task ) =
                 [ HE.onClick <| TaskRemoved { id = id } ]
                 [ H.text "Remove task" ]
             ]
+    , viewIsNotAValidNumber wrapInRow task.minutesSpent
+    ]
+
+
+viewIsNotAValidNumber : (List (H.Attribute msg) -> List (Html msg) -> Html msg) -> NumberInput -> Html msg
+viewIsNotAValidNumber tag numberInput =
+    case numberInput.parsed of
+        Just _ ->
+            H.text ""
+
+        Nothing ->
+            tag
+                [ HA.style "color" "red" ]
+                [ H.text <| "\"" ++ numberInput.raw ++ "\" is not a valid number." ]
 
 
 update : Msg -> Model -> Model
