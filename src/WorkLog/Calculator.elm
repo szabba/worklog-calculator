@@ -41,6 +41,11 @@ distribute target realTimes =
             |> Ok
 
 
+timeThenID : ( Int, Int ) -> ( Int, Int )
+timeThenID ( id, time ) =
+    ( time, id )
+
+
 loop : Int -> Int -> List ( Int, Int ) -> List ( Int, Int )
 loop diffLeft step assignment =
     if diffLeft <= 0 then
@@ -50,11 +55,6 @@ loop diffLeft step assignment =
         assignment
             |> List.indexedMap (addToFirst diffLeft)
             |> loop (diffLeft - step) step
-
-
-timeThenID ( Int, Int ) -> (Int, Int )
-timeThenID ( id, time ) =
-    ( time, id )
 
 
 addToFirst : Int -> Int -> ( Int, Int ) -> ( Int, Int )

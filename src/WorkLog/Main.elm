@@ -24,16 +24,15 @@ main =
 type alias Model =
     { totalMinutes : NumberInput
     , tasks : Dict Int (Task NumberInput)
+    , distribution : Result Task.TimeDistributionProblem (Dict Int (Task Int))
     }
 
 
 init : Model
 init =
     { totalMinutes = NumberInput.fromValue <| 8 * 60
-    , tasks =
-        Dict.fromList
-            [ ( 0, Task.empty |> Task.rename "#0" |> Task.setMinutesSpent "45" )
-            ]
+    , tasks = Dict.empty
+    , distribution = Err Task.NoWork
     }
 
 
@@ -54,6 +53,7 @@ view model =
         , H.button
             [ HE.onClick TaskAdded ]
             [ H.text "Add task" ]
+        , viewDistribution model.distribution
         ]
 
 
@@ -125,8 +125,62 @@ viewIsNotAValidNumber tag numberInput =
                 [ H.text <| "\"" ++ numberInput.raw ++ "\" is not a valid number." ]
 
 
+viewDistribution :
+    Result Task.TimeDistributionProblem (Dict Int (Task Int))
+    -> Html msg
+viewDistribution result =
+    case result of
+        Err problem ->
+            H.p
+                [ HA.style "color" "red " ]
+                [ H.text <|
+                    case problem of
+                        Task.NoWork ->
+                            "There is no work to distribute time between."
+
+                        Task.InvalidTime ->
+                            "Some time values are not valid. Please correct them."
+
+                        Task.Overwork ->
+                            "You have worked more than you need to log. Are you OK?"
+                ]
+
+        Ok distribution ->
+            viewOkDistribution distribution
+
+
+viewOkDistribution : Dict Int (Task Int) -> Html msg
+viewOkDistribution distribution =
+    let
+        headerRow =
+            H.tr []
+                [ H.td [] [ H.text "Task" ]
+                , H.td [] [ H.text "Time to log (minutes)" ]
+                ]
+
+        taskRows =
+            List.map viewDistributionTask <| Dict.values distribution
+    in
+    H.table [] <| headerRow :: taskRows
+
+
+viewDistributionTask : Task Int -> Html msg
+viewDistributionTask { name, minutesSpent } =
+    H.tr []
+        [ H.td [] [ H.text name ]
+        , H.td [] [ H.text <| String.fromInt minutesSpent ]
+        ]
+
+
 update : Msg -> Model -> Model
 update msg model =
+    model
+        |> updateInput msg
+        |> distributeTime
+
+
+updateInput : Msg -> Model -> Model
+updateInput msg model =
     case msg of
         TotalEntered rawInput ->
             { model | totalMinutes = NumberInput.fromRawInput rawInput }
@@ -158,3 +212,16 @@ update msg model =
                     model.tasks |> Task.update id (Task.setMinutesSpent rawMinutes)
             in
             { model | tasks = newTasks }
+
+
+distributeTime : Model -> Model
+distributeTime model =
+    let
+        target =
+            model.totalMinutes.parsed |> Maybe.withDefault -1
+
+        newDistribution =
+            model.tasks
+                |> Task.distributeTime target
+    in
+    { model | distribution = newDistribution }
