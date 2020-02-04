@@ -151,25 +151,19 @@ viewDistribution result =
 
 viewOkDistribution : Dict Int (Task Int) -> Html msg
 viewOkDistribution distribution =
-    let
-        headerRow =
-            H.tr []
-                [ H.td [] [ H.text "Task" ]
-                , H.td [] [ H.text "Time to log (minutes)" ]
-                ]
-
-        taskRows =
-            List.map viewDistributionTask <| Dict.values distribution
-    in
-    H.table [] <| headerRow :: taskRows
+    H.table [] <| List.map viewDistributionTask <| Dict.values distribution
 
 
 viewDistributionTask : Task Int -> Html msg
 viewDistributionTask { name, minutesSpent } =
-    H.tr []
-        [ H.td [] [ H.text name ]
-        , H.td [] [ H.text <| String.fromInt minutesSpent ]
-        ]
+    H.tr [] <|
+        List.map (H.td [] << List.singleton << H.text) <|
+            [ "For task"
+            , "\"" ++ name ++ "\""
+            , "log"
+            , String.fromInt minutesSpent
+            , " minutes."
+            ]
 
 
 update : Msg -> Model -> Model
