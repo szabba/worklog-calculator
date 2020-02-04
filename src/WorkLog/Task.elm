@@ -1,4 +1,4 @@
-module WorkLog.Task exposing (Task, empty, rename, setMinutesSpent)
+module WorkLog.Task exposing (Task, add, empty, rename, setMinutesSpent)
 
 --   This Source Code Form is subject to the terms of the Mozilla Public
 --   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -29,3 +29,18 @@ rename newName task =
 setMinutesSpent : String -> Task -> Task
 setMinutesSpent rawMinutes task =
     { task | minutesSpent = NumberInput.fromRawInput rawMinutes }
+
+
+add : Dict Int Task -> Dict Int Task
+add tasks =
+    tasks
+        |> Dict.insert (nextID tasks) empty
+
+
+nextID : Dict Int Task -> Int
+nextID tasks =
+    tasks
+        |> Dict.keys
+        |> List.maximum
+        |> Maybe.map ((+) 1)
+        |> Maybe.withDefault 0

@@ -42,6 +42,7 @@ init =
 
 type Msg
     = TotalEntered String
+    | TaskAdded
 
 
 view : Model -> Html Msg
@@ -50,6 +51,9 @@ view model =
         [ viewMinutesToLog model.totalMinutes
         , viewIsNotAValidNumber model.totalMinutes
         , viewTasks model.tasks
+        , H.button
+            [ HE.onClick TaskAdded ]
+            [ H.text "Add task" ]
         ]
 
 
@@ -98,3 +102,10 @@ update msg model =
     case msg of
         TotalEntered rawInput ->
             { model | totalMinutes = NumberInput.fromRawInput rawInput }
+
+        TaskAdded ->
+            let
+                newTasks =
+                    model.tasks |> Task.add
+            in
+            { model | tasks = newTasks }
