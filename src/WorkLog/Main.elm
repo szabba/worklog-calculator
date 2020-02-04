@@ -97,13 +97,13 @@ viewTaskRow id task =
                 , HA.value task.name
                 ]
                 []
-            , H.text " took up "
+            , H.text "took up"
             , H.input
                 [ HE.onInput <| \input -> TaskMinutesSpentSet { id = id, rawMinutes = input }
                 , HA.value task.minutesSpent.raw
                 ]
                 []
-            , H.text " of my time."
+            , H.text "minutes of my time."
             , H.button
                 [ HE.onClick <| TaskRemoved { id = id } ]
                 [ H.text "Remove task" ]
