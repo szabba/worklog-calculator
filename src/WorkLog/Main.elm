@@ -32,10 +32,7 @@ init =
     { totalMinutes = NumberInput.fromValue <| 8 * 60
     , tasks =
         Dict.fromList
-            [ ( 0, Task.empty )
-            , ( 1, Task.empty |> Task.rename "#1" )
-            , ( 2, Task.empty |> Task.setMinutesSpent "20" )
-            , ( 3, Task.empty |> Task.rename "#3" |> Task.setMinutesSpent "45" )
+            [ ( 0, Task.empty |> Task.rename "#0" |> Task.setMinutesSpent "45" )
             ]
     }
 
