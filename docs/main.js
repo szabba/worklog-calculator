@@ -5190,6 +5190,31 @@ var $elm$core$Result$andThen = F2(
 var $author$project$WorkLog$Calculator$NegativeTime = 0;
 var $author$project$WorkLog$Calculator$NoWork = 1;
 var $author$project$WorkLog$Calculator$Overwork = 2;
+var $elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === -2) {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3($elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
 var $elm$core$Dict$Black = 1;
 var $elm$core$Dict$RBNode_elm_builtin = F5(
 	function (a, b, c, d, e) {
@@ -5357,90 +5382,6 @@ var $elm$core$Dict$isEmpty = function (dict) {
 		return false;
 	}
 };
-var $author$project$WorkLog$Calculator$addToFirst = F3(
-	function (n, ix, _v0) {
-		var id = _v0.a;
-		var time = _v0.b;
-		return (_Utils_cmp(ix, n) < 0) ? _Utils_Tuple2(id, time + 1) : _Utils_Tuple2(id, time);
-	});
-var $author$project$WorkLog$Calculator$loop = F3(
-	function (diffLeft, step, assignment) {
-		return (diffLeft <= 0) ? assignment : A3(
-			$author$project$WorkLog$Calculator$loop,
-			diffLeft - step,
-			step,
-			A2(
-				$elm$core$List$indexedMap,
-				$author$project$WorkLog$Calculator$addToFirst(diffLeft),
-				assignment));
-	});
-var $elm$core$List$sum = function (numbers) {
-	return A3($elm$core$List$foldl, $elm$core$Basics$add, 0, numbers);
-};
-var $author$project$WorkLog$Calculator$realTotal = function (realTimes) {
-	return $elm$core$List$sum(
-		$elm$core$Dict$values(realTimes));
-};
-var $elm$core$Dict$sizeHelp = F2(
-	function (n, dict) {
-		sizeHelp:
-		while (true) {
-			if (dict.$ === -2) {
-				return n;
-			} else {
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$n = A2($elm$core$Dict$sizeHelp, n + 1, right),
-					$temp$dict = left;
-				n = $temp$n;
-				dict = $temp$dict;
-				continue sizeHelp;
-			}
-		}
-	});
-var $elm$core$Dict$size = function (dict) {
-	return A2($elm$core$Dict$sizeHelp, 0, dict);
-};
-var $elm$core$List$sortBy = _List_sortBy;
-var $author$project$WorkLog$Calculator$timeThenID = function (_v0) {
-	var id = _v0.a;
-	var time = _v0.b;
-	return _Utils_Tuple2(time, id);
-};
-var $author$project$WorkLog$Calculator$distribute = F2(
-	function (target, realTimes) {
-		if ((target < 0) || $author$project$WorkLog$Calculator$hasNegatives(realTimes)) {
-			return $elm$core$Result$Err(0);
-		} else {
-			if ($elm$core$Dict$isEmpty(realTimes)) {
-				return $elm$core$Result$Err(1);
-			} else {
-				if (_Utils_cmp(
-					target,
-					$author$project$WorkLog$Calculator$realTotal(realTimes)) < 0) {
-					return $elm$core$Result$Err(2);
-				} else {
-					if (_Utils_eq(
-						target,
-						$author$project$WorkLog$Calculator$realTotal(realTimes))) {
-						return $elm$core$Result$Ok(realTimes);
-					} else {
-						var diff = target - $author$project$WorkLog$Calculator$realTotal(realTimes);
-						return $elm$core$Result$Ok(
-							$elm$core$Dict$fromList(
-								A3(
-									$author$project$WorkLog$Calculator$loop,
-									diff,
-									$elm$core$Dict$size(realTimes),
-									A2(
-										$elm$core$List$sortBy,
-										$author$project$WorkLog$Calculator$timeThenID,
-										$elm$core$Dict$toList(realTimes)))));
-					}
-				}
-			}
-		}
-	});
 var $elm$core$Dict$map = F2(
 	function (func, dict) {
 		if (dict.$ === -2) {
@@ -5458,6 +5399,66 @@ var $elm$core$Dict$map = F2(
 				A2(func, key, value),
 				A2($elm$core$Dict$map, func, left),
 				A2($elm$core$Dict$map, func, right));
+		}
+	});
+var $author$project$WorkLog$Calculator$scaleBy = F3(
+	function (factor, _v0, time) {
+		return $elm$core$Basics$ceiling(factor * time);
+	});
+var $elm$core$List$sortBy = _List_sortBy;
+var $elm$core$List$sum = function (numbers) {
+	return A3($elm$core$List$foldl, $elm$core$Basics$add, 0, numbers);
+};
+var $author$project$WorkLog$Calculator$takeFromFirst = F3(
+	function (n, ix, _v0) {
+		var id = _v0.a;
+		var time = _v0.b;
+		return (_Utils_cmp(ix, n) < 0) ? _Utils_Tuple2(id, time - 1) : _Utils_Tuple2(id, time);
+	});
+var $author$project$WorkLog$Calculator$timeThenID = function (_v0) {
+	var id = _v0.a;
+	var time = _v0.b;
+	return _Utils_Tuple2(time, id);
+};
+var $author$project$WorkLog$Calculator$distribute = F2(
+	function (target, realTimes) {
+		if ((target < 0) || $author$project$WorkLog$Calculator$hasNegatives(realTimes)) {
+			return $elm$core$Result$Err(0);
+		} else {
+			if ($elm$core$Dict$isEmpty(realTimes)) {
+				return $elm$core$Result$Err(1);
+			} else {
+				var realTotal = $elm$core$List$sum(
+					$elm$core$Dict$values(realTimes));
+				var scale = target / realTotal;
+				var diff = target - realTotal;
+				if (_Utils_cmp(target, realTotal) < 0) {
+					return $elm$core$Result$Err(2);
+				} else {
+					var scaledTimes = A2(
+						$elm$core$Dict$map,
+						$author$project$WorkLog$Calculator$scaleBy(scale),
+						realTimes);
+					var scaledTotal = A3(
+						$elm$core$Dict$foldl,
+						F3(
+							function (_v0, time, acc) {
+								return acc + time;
+							}),
+						0,
+						scaledTimes);
+					var overshoot = scaledTotal - target;
+					return $elm$core$Result$Ok(
+						$elm$core$Dict$fromList(
+							A2(
+								$elm$core$List$indexedMap,
+								$author$project$WorkLog$Calculator$takeFromFirst(overshoot),
+								A2(
+									$elm$core$List$sortBy,
+									$author$project$WorkLog$Calculator$timeThenID,
+									$elm$core$Dict$toList(scaledTimes)))));
+				}
+			}
 		}
 	});
 var $elm$core$Result$map = F2(

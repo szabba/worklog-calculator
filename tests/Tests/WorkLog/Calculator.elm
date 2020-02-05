@@ -47,6 +47,28 @@ suite =
 
                     _ ->
                         Expect.pass
+        , fuzz2 sensibleNumber sensibleNumber "doubles the time of each task when target == 2 * realTime" <|
+            \first second ->
+                let
+                    realTimes =
+                        Dict.fromList
+                            [ ( 0, first )
+                            , ( 1, second )
+                            ]
+
+                    total =
+                        2 * (first + second)
+
+                    expected =
+                        realTimes |> Dict.map (\_ t -> 2 * t)
+                in
+                case Calculator.distribute total realTimes of
+                    Ok distributedTimes ->
+                        distributedTimes
+                            |> Expect.equalDicts expected
+
+                    _ ->
+                        Expect.pass
         , test "complains when the target total is negative" <|
             \() ->
                 Dict.fromList [ ( 0, 10 ) ]

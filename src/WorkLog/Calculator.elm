@@ -14,7 +14,7 @@ type Problem
     | Overwork
 
 
-distribute : Int -> Dict Int Int -> Result Problem (Dict Int Int)
+distribute : Int -> Dict comparable Int -> Result Problem (Dict comparable Int)
 distribute target realTimes =
     if target < 0 || hasNegatives realTimes then
         Err NegativeTime
@@ -22,59 +22,60 @@ distribute target realTimes =
     else if Dict.isEmpty realTimes then
         Err NoWork
 
-    else if target < realTotal realTimes then
-        Err Overwork
-
-    else if target == realTotal realTimes then
-        Ok realTimes
-
     else
         let
+            realTotal =
+                realTimes |> Dict.values |> List.sum
+
             diff =
-                target - realTotal realTimes
+                target - realTotal
+
+            scale =
+                toFloat target / toFloat realTotal
         in
-        realTimes
-            |> Dict.toList
-            |> List.sortBy timeThenID
-            |> loop diff (Dict.size realTimes)
-            |> Dict.fromList
-            |> Ok
+        if target < realTotal then
+            Err Overwork
+
+        else
+            let
+                scaledTimes =
+                    realTimes |> Dict.map (scaleBy scale)
+
+                scaledTotal =
+                    scaledTimes |> Dict.foldl (\_ time acc -> acc + time) 0
+
+                overshoot =
+                    scaledTotal - target
+            in
+            scaledTimes
+                |> Dict.toList
+                |> List.sortBy timeThenID
+                |> List.indexedMap (takeFromFirst overshoot)
+                |> Dict.fromList
+                |> Ok
 
 
-timeThenID : ( Int, Int ) -> ( Int, Int )
+scaleBy : Float -> id -> Int -> Int
+scaleBy factor _ time =
+    ceiling <| factor * toFloat time
+
+
+timeThenID : ( id, Int ) -> ( Int, id )
 timeThenID ( id, time ) =
     ( time, id )
 
 
-loop : Int -> Int -> List ( Int, Int ) -> List ( Int, Int )
-loop diffLeft step assignment =
-    if diffLeft <= 0 then
-        assignment
-
-    else
-        assignment
-            |> List.indexedMap (addToFirst diffLeft)
-            |> loop (diffLeft - step) step
-
-
-addToFirst : Int -> Int -> ( Int, Int ) -> ( Int, Int )
-addToFirst n ix ( id, time ) =
+takeFromFirst : Int -> Int -> ( id, Int ) -> ( id, Int )
+takeFromFirst n ix ( id, time ) =
     if ix < n then
-        ( id, time + 1 )
+        ( id, time - 1 )
 
     else
         ( id, time )
 
 
-hasNegatives : Dict Int Int -> Bool
+hasNegatives : Dict id Int -> Bool
 hasNegatives realTimes =
     realTimes
         |> Dict.values
         |> List.any (\x -> x < 0)
-
-
-realTotal : Dict Int Int -> Int
-realTotal realTimes =
-    realTimes
-        |> Dict.values
-        |> List.sum
