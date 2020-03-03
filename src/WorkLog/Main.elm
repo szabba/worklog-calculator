@@ -6,13 +6,17 @@ module WorkLog.Main exposing (main)
 
 import Browser
 import Dict exposing (Dict)
-import Html as H exposing (Html)
-import Html.Attributes as HA
-import Html.Events as HE
+import Element exposing (Element)
+import Element.Border as Border
+import Element.Font as Font
+import Element.Input as Input
+import Html exposing (Html)
+import Maybe.Extra as Maybe
 import WorkLog.NumberInput as NumberInput exposing (NumberInput)
 import WorkLog.Task as Task exposing (Task)
 
 
+main : Program () Model Msg
 main =
     Browser.sandbox
         { init = init
@@ -46,124 +50,189 @@ type Msg
 
 view : Model -> Html Msg
 view model =
-    H.div []
+    Element.layout [] <| viewLayout model
+
+
+viewLayout : Model -> Element Msg
+viewLayout model =
+    Element.column
+        [ Element.paddingXY 100 50
+        , Element.spacing 50
+        , Font.size 12
+        , Font.family
+            [ Font.typeface "Helvetica"
+            , Font.typeface "Arial"
+            , Font.typeface "DejaVu Sans"
+            , Font.sansSerif
+            ]
+        ]
         [ viewMinutesToLog model.totalMinutes
-        , viewIsNotAValidNumber H.p model.totalMinutes
-        , viewTasks model.tasks
-        , H.button
-            [ HE.onClick TaskAdded ]
-            [ H.text "Add task" ]
-        , viewDistribution model.distribution
+        , case model.totalMinutes.parsed of
+            Just _ ->
+                Element.none
+
+            Nothing ->
+                Element.paragraph errorFont
+                    [ Element.text <| "\"" ++ model.totalMinutes.raw ++ "\" is not a valid number." ]
+        , case model.distribution of
+            Ok _ ->
+                Element.none
+
+            Err problem ->
+                viewTimeDistributionProblem problem
+        , Element.column [ Element.spacing 20 ]
+            [ viewTasks model.tasks
+            , Input.button buttonStyle
+                { onPress = Just TaskAdded
+                , label = Element.text "Add task"
+                }
+            ]
+        , case model.distribution of
+            Err _ ->
+                Element.none
+
+            Ok distribution ->
+                viewDistribution distribution
         ]
 
 
-viewMinutesToLog : NumberInput -> Html Msg
+viewMinutesToLog : NumberInput -> Element Msg
 viewMinutesToLog { raw } =
-    H.p []
-        [ H.text "I need to log "
-        , H.input [ HE.onInput TotalEntered, HA.value raw ] []
-        , H.text " minutes."
+    Element.paragraph []
+        [ Element.text "I need to log "
+        , Input.text inputStyle
+            { onChange = TotalEntered
+            , text = raw
+            , placeholder = Nothing
+            , label = Input.labelHidden "Minutes to log"
+            }
+        , Element.text " minutes."
         ]
 
 
-viewTasks : Dict Int (Task NumberInput) -> Html Msg
+viewTimeDistributionProblem : Task.TimeDistributionProblem -> Element none
+viewTimeDistributionProblem problem =
+    Element.paragraph
+        errorFont
+        [ Element.text <|
+            case problem of
+                Task.NoWork ->
+                    "There is no work to distribute time between."
+
+                Task.InvalidTime ->
+                    "Some time values are not valid. Please correct them."
+
+                Task.Overwork ->
+                    "You have worked more than you need to log. Are you OK?"
+        ]
+
+
+viewTasks : Dict Int (Task NumberInput) -> Element Msg
 viewTasks tasks =
-    H.table [] <|
-        List.concatMap viewTask <|
-            Dict.toList tasks
+    if Dict.isEmpty tasks then
+        Element.none
 
+    else
+        Element.table
+            [ Element.spacingXY 10 0 ]
+            { data = Dict.toList tasks
+            , columns =
+                [ { header = Element.text "The task"
+                  , width = Element.fill
+                  , view =
+                        \( id, task ) ->
+                            Input.text inputStyle
+                                { onChange = \input -> TaskRenamed { id = id, newName = input }
+                                , text = task.name
+                                , placeholder = Nothing
+                                , label = Input.labelHidden "Task ID"
+                                }
+                  }
+                , { header = Element.text "took"
+                  , width = Element.fill
+                  , view =
+                        \( id, task ) ->
+                            let
+                                extraStyle =
+                                    if Maybe.isJust task.minutesSpent.parsed then
+                                        []
 
-viewTask : ( Int, Task NumberInput ) -> List (Html Msg)
-viewTask ( id, task ) =
-    let
-        wrapInRow attrs children =
-            H.tr []
-                [ H.td ([ HA.colspan 6 ] ++ attrs)
-                    children
+                                    else
+                                        [ Border.color errorColor
+                                        , Font.color errorColor
+                                        ]
+                            in
+                            Input.text (inputStyle ++ extraStyle)
+                                { onChange = \input -> TaskMinutesSpentSet { id = id, rawMinutes = input }
+                                , text = task.minutesSpent.raw
+                                , placeholder = Nothing
+                                , label = Input.labelHidden "Minutes spent on task"
+                                }
+                  }
+                , { header = Element.text "minutes of my time."
+                  , width = Element.fill
+                  , view =
+                        \( id, _ ) ->
+                            Element.el [ Element.alignBottom ] <|
+                                Input.button buttonStyle
+                                    { onPress = Just <| TaskRemoved { id = id }
+                                    , label = Element.text "Remove task"
+                                    }
+                  }
                 ]
-    in
-    [ viewTaskRow id task
-    , viewIsNotAValidNumber wrapInRow task.minutesSpent
+            }
+
+
+viewDistribution : Dict Int (Task Int) -> Element msg
+viewDistribution distribution =
+    Element.table [ Element.spacingXY 10 10 ]
+        { data = Dict.toList distribution
+        , columns =
+            [ { header = Element.text "For the task"
+              , width = Element.shrink
+              , view =
+                    \( _, task ) ->
+                        Element.text task.name
+              }
+            , { header = Element.text "log"
+              , width = Element.shrink
+              , view =
+                    \( _, task ) ->
+                        Element.text <| String.fromInt task.minutesSpent
+              }
+            , { header = Element.text "minutes of work."
+              , width = Element.shrink
+              , view = always Element.none
+              }
+            ]
+        }
+
+
+inputStyle : List (Element.Attribute msg)
+inputStyle =
+    [ Border.color <| Element.rgb 0 0 0
+    , Border.widthEach
+        { bottom = 1, left = 0, right = 0, top = 0 }
     ]
 
 
-viewTaskRow : Int -> Task NumberInput -> Html Msg
-viewTaskRow id task =
-    H.tr [] <|
-        List.map (H.td [] << List.singleton)
-            [ H.text "Task"
-            , H.input
-                [ HE.onInput <| \input -> TaskRenamed { id = id, newName = input }
-                , HA.value task.name
-                ]
-                []
-            , H.text "took up"
-            , H.input
-                [ HE.onInput <| \input -> TaskMinutesSpentSet { id = id, rawMinutes = input }
-                , HA.value task.minutesSpent.raw
-                ]
-                []
-            , H.text "minutes of my time."
-            , H.button
-                [ HE.onClick <| TaskRemoved { id = id } ]
-                [ H.text "Remove task" ]
-            ]
+buttonStyle : List (Element.Attribute msg)
+buttonStyle =
+    [ Element.padding 5
+    , Border.color (Element.rgb 0 0 0)
+    , Border.width 1
+    ]
 
 
-viewIsNotAValidNumber :
-    (List (H.Attribute msg) -> List (Html msg) -> Html msg)
-    -> NumberInput
-    -> Html msg
-viewIsNotAValidNumber tag numberInput =
-    case numberInput.parsed of
-        Just _ ->
-            H.text ""
-
-        Nothing ->
-            tag
-                [ HA.style "color" "red" ]
-                [ H.text <| "\"" ++ numberInput.raw ++ "\" is not a valid number." ]
+errorFont : List (Element.Attr decorative msg)
+errorFont =
+    [ Font.color (Element.rgb 1 0 0)
+    ]
 
 
-viewDistribution :
-    Result Task.TimeDistributionProblem (Dict Int (Task Int))
-    -> Html msg
-viewDistribution result =
-    case result of
-        Err problem ->
-            H.p
-                [ HA.style "color" "red " ]
-                [ H.text <|
-                    case problem of
-                        Task.NoWork ->
-                            "There is no work to distribute time between."
-
-                        Task.InvalidTime ->
-                            "Some time values are not valid. Please correct them."
-
-                        Task.Overwork ->
-                            "You have worked more than you need to log. Are you OK?"
-                ]
-
-        Ok distribution ->
-            viewOkDistribution distribution
-
-
-viewOkDistribution : Dict Int (Task Int) -> Html msg
-viewOkDistribution distribution =
-    H.table [] <| List.map viewDistributionTask <| Dict.values distribution
-
-
-viewDistributionTask : Task Int -> Html msg
-viewDistributionTask { name, minutesSpent } =
-    H.tr [] <|
-        List.map (H.td [] << List.singleton << H.text) <|
-            [ "For task"
-            , "\"" ++ name ++ "\""
-            , "log"
-            , String.fromInt minutesSpent
-            , " minutes."
-            ]
+errorColor : Element.Color
+errorColor =
+    Element.rgb 1 0 0
 
 
 update : Msg -> Model -> Model
