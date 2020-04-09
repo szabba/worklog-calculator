@@ -12025,8 +12025,6 @@ var $mdgriffith$elm_ui$Element$Font$family = function (families) {
 			A3($elm$core$List$foldl, $mdgriffith$elm_ui$Internal$Model$renderFontClassName, 'ff-', families),
 			families));
 };
-var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 3};
-var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
 var $mdgriffith$elm_ui$Element$paddingXY = F2(
 	function (x, y) {
 		return _Utils_eq(x, y) ? A2(
@@ -12105,6 +12103,8 @@ var $mdgriffith$elm_ui$Element$text = function (content) {
 	return $mdgriffith$elm_ui$Internal$Model$Text(content);
 };
 var $mdgriffith$elm_ui$Element$Font$typeface = $mdgriffith$elm_ui$Internal$Model$Typeface;
+var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 3};
+var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
 var $mdgriffith$elm_ui$Element$spacingXY = F2(
 	function (x, y) {
 		return A2(
@@ -13454,6 +13454,33 @@ var $author$project$WorkLog$Main$viewTimeDistributionProblem = function (problem
 				}())
 			]));
 };
+var $author$project$WorkLog$Main$emptyElement = A2($mdgriffith$elm_ui$Element$el, _List_Nil, $mdgriffith$elm_ui$Element$none);
+var $author$project$WorkLog$Main$whenError = F2(
+	function (result, viewFunc) {
+		if (result.$ === 1) {
+			var err = result.a;
+			return viewFunc(err);
+		} else {
+			return $author$project$WorkLog$Main$emptyElement;
+		}
+	});
+var $author$project$WorkLog$Main$whenNothing = F2(
+	function (maybe, _default) {
+		if (maybe.$ === 1) {
+			return _default;
+		} else {
+			return $author$project$WorkLog$Main$emptyElement;
+		}
+	});
+var $author$project$WorkLog$Main$whenOk = F2(
+	function (result, viewFunc) {
+		if (!result.$) {
+			var value = result.a;
+			return viewFunc(value);
+		} else {
+			return $author$project$WorkLog$Main$emptyElement;
+		}
+	});
 var $author$project$WorkLog$Main$viewLayout = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
@@ -13474,29 +13501,17 @@ var $author$project$WorkLog$Main$viewLayout = function (model) {
 		_List_fromArray(
 			[
 				$author$project$WorkLog$Main$viewMinutesToLog(model.T),
-				function () {
-				var _v0 = model.T.aX;
-				if (!_v0.$) {
-					return $mdgriffith$elm_ui$Element$none;
-				} else {
-					return A2(
-						$mdgriffith$elm_ui$Element$paragraph,
-						$author$project$WorkLog$Main$errorFont,
-						_List_fromArray(
-							[
-								$mdgriffith$elm_ui$Element$text('\"' + (model.T.a_ + '\" is not a valid number.'))
-							]));
-				}
-			}(),
-				function () {
-				var _v1 = model.aj;
-				if (!_v1.$) {
-					return $mdgriffith$elm_ui$Element$none;
-				} else {
-					var problem = _v1.a;
-					return $author$project$WorkLog$Main$viewTimeDistributionProblem(problem);
-				}
-			}(),
+				A2(
+				$author$project$WorkLog$Main$whenNothing,
+				model.T.aX,
+				A2(
+					$mdgriffith$elm_ui$Element$paragraph,
+					$author$project$WorkLog$Main$errorFont,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$text('\"' + (model.T.a_ + '\" is not a valid number.'))
+						]))),
+				A2($author$project$WorkLog$Main$whenError, model.aj, $author$project$WorkLog$Main$viewTimeDistributionProblem),
 				A2(
 				$mdgriffith$elm_ui$Element$column,
 				_List_fromArray(
@@ -13514,15 +13529,7 @@ var $author$project$WorkLog$Main$viewLayout = function (model) {
 							bJ: $elm$core$Maybe$Just($author$project$WorkLog$Main$TaskAdded)
 						})
 					])),
-				function () {
-				var _v2 = model.aj;
-				if (_v2.$ === 1) {
-					return $mdgriffith$elm_ui$Element$none;
-				} else {
-					var distribution = _v2.a;
-					return $author$project$WorkLog$Main$viewDistribution(distribution);
-				}
-			}()
+				A2($author$project$WorkLog$Main$whenOk, model.aj, $author$project$WorkLog$Main$viewDistribution)
 			]));
 };
 var $author$project$WorkLog$Main$view = function (model) {

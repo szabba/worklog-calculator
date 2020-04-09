@@ -67,19 +67,10 @@ viewLayout model =
             ]
         ]
         [ viewMinutesToLog model.totalMinutes
-        , case model.totalMinutes.parsed of
-            Just _ ->
-                Element.none
-
-            Nothing ->
-                Element.paragraph errorFont
-                    [ Element.text <| "\"" ++ model.totalMinutes.raw ++ "\" is not a valid number." ]
-        , case model.distribution of
-            Ok _ ->
-                Element.none
-
-            Err problem ->
-                viewTimeDistributionProblem problem
+        , whenNothing model.totalMinutes.parsed <|
+            Element.paragraph errorFont
+                [ Element.text <| "\"" ++ model.totalMinutes.raw ++ "\" is not a valid number." ]
+        , whenError model.distribution viewTimeDistributionProblem
         , Element.column [ Element.spacing 20 ]
             [ viewTasks model.tasks
             , Input.button buttonStyle
@@ -87,13 +78,50 @@ viewLayout model =
                 , label = Element.text "Add task"
                 }
             ]
-        , case model.distribution of
-            Err _ ->
-                Element.none
-
-            Ok distribution ->
-                viewDistribution distribution
+        , whenOk model.distribution viewDistribution
         ]
+
+
+whenNothing : Maybe a -> Element msg -> Element msg
+whenNothing maybe default =
+    case maybe of
+        Nothing ->
+            default
+
+        Just _ ->
+            emptyElement
+
+
+whenOk : Result err a -> (a -> Element msg) -> Element msg
+whenOk result viewFunc =
+    case result of
+        Ok value ->
+            viewFunc value
+
+        Err _ ->
+            emptyElement
+
+
+whenError : Result err a -> (err -> Element msg) -> Element msg
+whenError result viewFunc =
+    case result of
+        Err err ->
+            viewFunc err
+
+        Ok _ ->
+            emptyElement
+
+
+{-| An element that has nothing inside.
+This is different from `Element.none`, which results in no element at all.
+
+Conditionally replacing a node with `Element.node` can cause issues with focus.
+Using `emptyElement` avoids them.
+
+-}
+emptyElement : Element any
+emptyElement =
+    Element.el [] Element.none
 
 
 viewMinutesToLog : NumberInput -> Element Msg
